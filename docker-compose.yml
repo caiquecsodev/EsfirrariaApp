@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: esfirraria_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: esfirraria
+    ports:
+      - "5432:5432"
+    volumes:
+      - esfirraria_data:/var/lib/postgresql/data
+
+volumes:
+  esfirraria_data:
