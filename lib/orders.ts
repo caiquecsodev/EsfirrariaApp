@@ -55,3 +55,38 @@ export async function getOrdersForUser(userId: string) {
     include: { items: true },
   });
 }
+
+export async function getOrderForUser(orderId: string, userId: string) {
+  return prisma.order.findFirst({
+    where: { id: orderId, userId },
+    include: { items: true },
+  });
+}
+
+export async function setOrderPreference(orderId: string, preferenceId: string) {
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { mpPreferenceId: preferenceId },
+  });
+}
+
+const paymentStatusToOrderStatus: Record<string, "CONFIRMED" | "CANCELED" | "PENDING"> = {
+  approved: "CONFIRMED",
+  rejected: "CANCELED",
+  cancelled: "CANCELED",
+  pending: "PENDING",
+  in_process: "PENDING",
+};
+
+export async function applyPaymentResult(
+  orderId: string,
+  paymentId: string,
+  paymentStatus: string
+) {
+  const status = paymentStatusToOrderStatus[paymentStatus] ?? "PENDING";
+
+  return prisma.order.update({
+    where: { id: orderId },
+    data: { mpPaymentId: paymentId, status },
+  });
+}

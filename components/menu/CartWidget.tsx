@@ -1,17 +1,51 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatCents } from "@/lib/format";
 import { clearCart, removeItem, updateQuantity } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 export function CartWidget() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const items = useAppSelector((state) => state.cart.items);
   const dispatch = useAppDispatch();
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalCents = items.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
+
+  async function handleCheckout() {
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data?.error ?? "Não foi possível finalizar o pedido");
+        return;
+      }
+
+      dispatch(clearCart());
+      setOpen(false);
+      router.push(`/pedidos/${data.order.id}`);
+    } catch {
+      setError("Não foi possível finalizar o pedido");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <>
@@ -109,12 +143,13 @@ export function CartWidget() {
                   <span>Total</span>
                   <span>{formatCents(totalCents)}</span>
                 </div>
+                {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
                 <button
-                  disabled
-                  title="Em breve"
-                  className="w-full cursor-not-allowed rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white opacity-60"
+                  onClick={handleCheckout}
+                  disabled={submitting}
+                  className="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Finalizar pedido (em breve)
+                  {submitting ? "Enviando..." : "Finalizar pedido"}
                 </button>
                 <button
                   onClick={() => dispatch(clearCart())}

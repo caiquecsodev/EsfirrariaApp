@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -25,6 +26,12 @@ export default async function Home() {
             <span className="hidden text-sm text-neutral-500 sm:inline">
               {session.user?.email}
             </span>
+            <Link
+              href="/pedidos"
+              className="text-sm font-medium text-neutral-600 hover:text-red-600"
+            >
+              Meus pedidos
+            </Link>
             <SignOutButton />
           </div>
         </header>
