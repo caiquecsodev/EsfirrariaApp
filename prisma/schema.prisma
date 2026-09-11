@@ -21,6 +21,7 @@ model User {
   password      String?
   accounts      Account[]
   sessions      Session[]
+  orders        Order[]
   createdAt     DateTime  @default(now())
 }
 
@@ -57,4 +58,66 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  priceCents  Int
+  emoji       String   @default("🥙")
+  isCombo     Boolean  @default(false)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  comboItems  ComboItem[] @relation("ComboParent")
+  partOfCombos ComboItem[] @relation("ComboComponent")
+  orderItems  OrderItem[]
+  createdAt   DateTime @default(now())
+}
+
+model ComboItem {
+  id        String  @id @default(cuid())
+  comboId   String
+  combo     Product @relation("ComboParent", fields: [comboId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation("ComboComponent", fields: [productId], references: [id])
+  quantity  Int     @default(1)
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELED
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  status     OrderStatus @default(PENDING)
+  totalCents Int
+  items      OrderItem[]
+  createdAt  DateTime    @default(now())
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  productName String
+  priceCents  Int
+  quantity    Int
 }

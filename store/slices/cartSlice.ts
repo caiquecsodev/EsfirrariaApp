@@ -3,7 +3,8 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 export type CartItem = {
   id: string;
   name: string;
-  price: number;
+  priceCents: number;
+  emoji: string;
   quantity: number;
 };
 
@@ -31,6 +32,10 @@ const cartSlice = createSlice({
       state.items = state.items.filter((item) => item.id !== action.payload);
     },
     updateQuantity(state, action: PayloadAction<{ id: string; quantity: number }>) {
+      if (action.payload.quantity <= 0) {
+        state.items = state.items.filter((item) => item.id !== action.payload.id);
+        return;
+      }
       const item = state.items.find((item) => item.id === action.payload.id);
       if (item) {
         item.quantity = action.payload.quantity;
