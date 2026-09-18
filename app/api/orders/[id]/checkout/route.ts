@@ -29,6 +29,10 @@ export async function POST(
   }
 
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  // O Mercado Pago exige back_urls em https para aceitar auto_return, e não
+  // consegue chamar notification_url em localhost — então só habilitamos os
+  // dois quando a base URL for pública (ex.: via ngrok em desenvolvimento).
+  const isPublicHttps = baseUrl.startsWith("https://");
 
   const preference = await preferenceClient.create({
     body: {
@@ -45,6 +49,10 @@ export async function POST(
         pending: `${baseUrl}/pedidos/${order.id}/retorno`,
         failure: `${baseUrl}/pedidos/${order.id}/retorno`,
       },
+      ...(isPublicHttps && {
+        auto_return: "approved" as const,
+        notification_url: `${baseUrl}/api/webhooks/mercadopago`,
+      }),
     },
   });
 
